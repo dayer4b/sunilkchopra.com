@@ -1,0 +1,10 @@
+name = SKC Wordpress Migration
+description = For migration from wordpress
+dependencies[] = migrate
+package = Custom
+core = 7.x
+version = 7.x-1.x
+files[] = skc_wordpress.module
+files[] = skc_wordpress_posts.inc
+files[] = skc_wordpress_podcast.inc
+files[] = skc_wordpress_gigs.inc
