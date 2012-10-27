@@ -1,33 +1,6 @@
 <?php
 
-$media_path = "media/";
-$files;
 
-if ($handle = opendir($media_path)) {
-    while (false !== ($entry = readdir($handle))) {
-        if ($entry != "." && $entry != "..") {
-            $files[] = trim($entry);
-        }
-    }
-    closedir($handle);
-}
-sort($files);
-
-
-/*
-
-		<ul>
-			<?php
-			foreach($files as $file){
-			?>
-			<li><a href='<?php echo $media_path.$file; ?>'><?php echo $file; ?></a></li>	
-			<?php
-			}
-			?>
-		</ul>
-
-
-*/
 ?>
 <!doctype html>
 <!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
