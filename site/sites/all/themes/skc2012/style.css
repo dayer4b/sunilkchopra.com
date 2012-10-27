@@ -225,9 +225,9 @@ body.sidebar-first #main {
 /* 2 columns: sidebar-second */
 body.sidebar-second #main {
   float: left;
-  margin: 0 5%;
+  margin: 0 10% 0 5%;
   padding: 0 0 3em 0;
-  width: 60%;
+  width: 55%;
 }
 /**
  * 4.SIDEBARS
