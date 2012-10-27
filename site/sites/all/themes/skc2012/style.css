@@ -35,16 +35,6 @@ Font sizes: 16px base font with 24px line-height
 Equation for font sizing: 
   Desired px ÷ Default (or parent) px = em size
 ------------------------------------------------*/
-/*
-//@import url(http://fonts.googleapis.com/css?family=Bree+Serif);
-//@import url(http://fonts.googleapis.com/css?family=Averia+Libre);
-//@import url(http://fonts.googleapis.com/css?family=Mate+SC);
-//@import url(http://fonts.googleapis.com/css?family=Trocchi);
-//@import url(http://fonts.googleapis.com/css?family=Dosis);
-//@import url(http://fonts.googleapis.com/css?family=Oxygen);
-//@import url(http://fonts.googleapis.com/css?family=Didact+Gothic);
-//@import url(http://fonts.googleapis.com/css?family=Shanti);
-*/
 /**
  * -1.COLOR DEFINITIONS 
  */
@@ -478,6 +468,9 @@ ul.secondary a.active {
   margin-bottom: 1.5em;
 }
 /* tags */
+footer .field .field-items {
+  float: left;
+}
 .field-name-field-tags {
   margin: 0 0 1.5em;
 }
