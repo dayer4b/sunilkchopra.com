@@ -340,8 +340,16 @@ abstract class WordPressItemMigration extends WordPressMigration {
     }
 
     // Only publish those with wp:status == 'publish'
-    if (isset($row->status) && $row->status == 'publish') {
-      $row->status = NODE_PUBLISHED;
+    if (isset($row->status)) {
+      switch ($row->status) {
+        case 'publish':
+          $row->status = NODE_PUBLISHED;
+          break;
+        case 'trash':
+          return FALSE;
+        default:
+          $row->status = NODE_NOT_PUBLISHED;
+      }
     }
     else {
       $row->status = NODE_NOT_PUBLISHED;
@@ -377,6 +385,12 @@ abstract class WordPressItemMigration extends WordPressMigration {
       else {
         $row->comment_status = COMMENT_NODE_CLOSED;
       }
+    }
+
+    // Pull out teasers out based on <!--more--> tags
+    $broken = explode('<!--more-->', $row->content);
+    if (count($broken) == 2) {
+      $row->excerpt = $broken[0];
     }
 
     // Interpret the [caption] tags
@@ -543,18 +557,18 @@ abstract class WordPressItemMigration extends WordPressMigration {
   /**
    * Replace a kml_flashembed tag with an HTML <object> tag.
    *
-   [kml_flashembed movie="http://s3.amazonaws.com/wholefoods/video/wpf/mariajuracan/soundslider.swf"
+   [kml_flashembed movie="http://example.com/video/soundslider.swf"
     FVARS="size=0" height="368" width="420" /]
    <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
    			id="fm_soundslider_1640275925"
    			class="flashmovie"
    			width="420"
    			height="368">
-   	<param name="movie" value="http://s3.amazonaws.com/wholefoods/video/wpf/mariajuracan/soundslider.swf" />
+   	<param name="movie" value="http://example.com/video/soundslider.swf"" />
    	<param name="flashvars" value="size=0" />
    	<!--[if !IE]>-->
    	<object	type="application/x-shockwave-flash"
-   			data="http://s3.amazonaws.com/wholefoods/video/wpf/mariajuracan/soundslider.swf"
+   			data="http://example.com/video/soundslider.swf""
    			name="fm_soundslider_1640275925"
    			width="420"
    			height="368">
@@ -739,8 +753,9 @@ abstract class WordPressItemMigration extends WordPressMigration {
         $field_name = $this->$meta_field_name;
         $value_name = $term_type . '_value';
         // Shortcut - if the counts match, don't need to dig deeper
-        if (isset($node->{$field_name}[LANGUAGE_NONE])) {
-          $node_count = count($node->{$field_name}[LANGUAGE_NONE]);
+        $field_values = field_get_items('node', $node, $field_name);
+        if (!empty($field_values)) {
+          $node_count = count($field_values);
         }
         else {
           $node_count = 0;
@@ -756,28 +771,31 @@ abstract class WordPressItemMigration extends WordPressMigration {
           $vid = $this->$vid_field;
           // Get any terms already in the field
           $done_terms = array();
-          if (is_array($node->{$field_name}[LANGUAGE_NONE])) {
-            foreach ($node->{$field_name}[LANGUAGE_NONE] as $value_array) {
+          if (is_array($field_values)) {
+            foreach ($field_values as $value_array) {
               $terms = taxonomy_term_load_multiple($value_array);
               foreach ($terms as $term) {
                 $done_terms[] = $term->name;
               }
             }
           }
-          $diff = array_diff($row->$value_name, $done_terms);
-          foreach ($diff as $new_term_name) {
-            // Let's see if the term already exists
-            $matches = taxonomy_term_load_multiple(array(),
-              array('name' => trim($new_term_name), 'vid' => $vid));
-            if ($matches) {
-              $node->{$field_name}[LANGUAGE_NONE][] = array('tid' => key($matches));
-            }
-            else {
-              $term = new stdClass;
-              $term->name = $new_term_name;
-              $term->vid = $vid;
-              taxonomy_term_save($term);
-              $node->{$field_name}[LANGUAGE_NONE][] = array('tid' => $term->tid);
+          if (isset($row->$value_name)) {
+            $diff = array_diff($row->$value_name, $done_terms);
+            $field_language = field_language('node', $node, $field_name);
+            foreach ($diff as $new_term_name) {
+              // Let's see if the term already exists
+              $matches = taxonomy_term_load_multiple(array(),
+                array('name' => trim($new_term_name), 'vid' => $vid));
+              if ($matches) {
+                $node->{$field_name}[$field_language][] = array('tid' => key($matches));
+              }
+              else {
+                $term = new stdClass;
+                $term->name = $new_term_name;
+                $term->vid = $vid;
+                taxonomy_term_save($term);
+                $node->{$field_name}[$field_language][] = array('tid' => $term->tid);
+              }
             }
           }
         }
@@ -799,8 +817,9 @@ abstract class WordPressItemMigration extends WordPressMigration {
           $url = str_replace($GLOBALS['base_url'] . '/', '/', $url);
           $link = '<p><a href="' . $url .
                   '"><img src="/modules/file/icons/audio-x-generic.png" /></a></p>';
-          $node->body[LANGUAGE_NONE][0]['value'] = str_replace('[powerpress]',
-            $link, $node->body[LANGUAGE_NONE][0]['value']);
+          $body_language = field_language('node', $node, 'body');
+          $node->body[$body_language][0]['value'] = str_replace('[powerpress]',
+            $link, $node->body[$body_language][0]['value']);
         }
       }
     }
@@ -856,6 +875,7 @@ class WordPressPage extends WordPressItemMigration {
       // Maintain the original update datestamp
       $changed = $node->changed;
       $node->body[LANGUAGE_NONE][0]['value'] = $this->fixLocalLinks($node->body[LANGUAGE_NONE][0]['value']);
+      $this->disablePathauto($node);
       node_save($node);
       db_update('node')
         ->fields(array('changed' => $changed))

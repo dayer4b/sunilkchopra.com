@@ -1,4 +1,3 @@
-;$Id: README.txt,v 1.1.2.1 2011/01/29 18:38:56 pcambra Exp $
 Helper module to place and manage a humans.txt file in your site.
 Just download the module, place in modules folder and enable it.
 -------------------

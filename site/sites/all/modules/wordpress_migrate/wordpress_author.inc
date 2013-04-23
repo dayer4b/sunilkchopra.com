@@ -102,6 +102,15 @@ class WordPressAuthorDestination extends MigrateDestinationUser {
              ->condition('mail', $account->mail)
              ->execute()
              ->fetchField();
+      if (!$uid) {
+        // This user does not yet exist on the site. See if we're supposed to
+        // create it.
+        $create_new_users = variable_get('wordpress_migrate_create_new_users', 1);
+        if (!$create_new_users) {
+          // Link this content to the default user chosen in the import settings.
+          $uid = variable_get('wordpress_migrate_default_author_uid', 1);
+        }
+      }
       if ($uid) {
         db_merge('wordpress_migrate_linked_authors')
           ->key(array('mail' => $account->mail))
@@ -111,7 +120,7 @@ class WordPressAuthorDestination extends MigrateDestinationUser {
         return array($uid);
       }
     }
-    // If there's no linkage, do the normal thing
+    // If there's no linkage, do the normal thing and create a new user.
     return parent::import($account, $row);
   }
 
@@ -125,6 +134,11 @@ class WordPressAuthorDestination extends MigrateDestinationUser {
    *  Array of user IDs to be deleted.
    */
   public function bulkRollback(array $uids) {
+    // Make sure we only attempt each uid once - if multiple authors had the
+    // same email address in WordPress, the corresponding Drupal uid will be in
+    // the array twice, we'll delete the linked_authors row the first time we
+    // see it, and the second pass on that uid will delete the account.
+    $uids = array_unique($uids, SORT_NUMERIC);
     $delete_uids = array();
     foreach ($uids as $uid) {
       $mail = db_select('wordpress_migrate_linked_authors', 'a')

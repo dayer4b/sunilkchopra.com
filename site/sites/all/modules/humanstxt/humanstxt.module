@@ -1,5 +1,4 @@
 <?php
-// $Id: humanstxt.module,v 1.1.2.2 2011/02/20 15:42:16 pcambra Exp $
 
 /**
  * @file
@@ -46,11 +45,7 @@ function humanstxt_file() {
   $content = array();
   $content[] = _humanstxt_get_content();
 
-  // Trim any extra whitespace and filter out empty strings.
-  $content = array_map('trim', $content);
-  $content = array_filter($content);
-
-  drupal_add_http_header('Content-type', 'text/plain');
+  header('Content-type: text/plain; charset=UTF-8');
   echo implode("\n", $content);
   exit;
 }

@@ -5,6 +5,7 @@ sites/*/settings*.php
 sites/*/files
 sites/*/private
 
-.htaccess
+cache
+cache/*
 
-honeymoon/media/*
+.htaccess

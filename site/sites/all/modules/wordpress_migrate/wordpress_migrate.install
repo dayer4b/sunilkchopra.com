@@ -62,7 +62,7 @@ function wordpress_migrate_schema_wordpress() {
     ),
     'primary key' => array('blog_id'),
     'unique keys' => array(
-      'filename' => array('blog_url'),
+      'blog_url' => array('blog_url'),
     ),
   );
 }
@@ -125,6 +125,48 @@ function wordpress_migrate_schema_linked_authors() {
     ),
     'primary key' => array('mail'),
   );
+}
+
+/**
+ * Implements hook_requirements().
+ *
+ * @param $phase
+ *
+ * @return array
+ */
+function wordpress_migrate_requirements($phase) {
+  $requirements = array();
+  // Make sure the XMLReader extension is available.
+  if (!extension_loaded('xmlreader')) {
+    $t = get_t();
+    $requirements['xmlreader']['severity'] = REQUIREMENT_ERROR;
+    $requirements['xmlreader']['title'] = $t('XMLReader extension');
+    $requirements['xmlreader']['description'] =
+      $t('WordPress Migrate requires the PHP XMLReader extension.');
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function wordpress_migrate_uninstall() {
+  variable_del('wordpress_migrate_attachment_field');
+  variable_del('wordpress_migrate_category_vocabulary');
+  variable_del('wordpress_migrate_generate_redirects');
+  variable_del('wordpress_migrate_import_method');
+  variable_del('wordpress_migrate_notification');
+  variable_del('wordpress_migrate_notification_body');
+  variable_del('wordpress_migrate_notification_failure_body');
+  variable_del('wordpress_migrate_notification_subject');
+  variable_del('wordpress_migrate_page_type');
+  variable_del('wordpress_migrate_path_action');
+  variable_del('wordpress_migrate_podcast_field');
+  variable_del('wordpress_migrate_post_type');
+  variable_del('wordpress_migrate_tag_vocabulary');
+  variable_del('wordpress_migrate_text_format');
+  variable_del('wordpress_migrate_text_format_comment');
 }
 
 /**
@@ -316,4 +358,14 @@ function wordpress_migrate_update_7008() {
  */
 function wordpress_migrate_update_7009() {
   variable_set('wordpress_migrate_import_method', 0);
+}
+
+/**
+ * Fix blog_url index name to make sense.
+ */
+function wordpress_migrate_update_7010() {
+  if (db_index_exists('wordpress_migrate', 'filename')) {
+    db_drop_index('wordpress_migrate', 'filename');
+    db_add_unique_key('wordpress_migrate', 'blog_url', array('blog_url'));
+  }
 }
